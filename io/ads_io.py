@@ -61,13 +61,7 @@ def structure_ads_data(data_lines: List[str]) -> Optional[dict]:
     """
     data_struct = {}
 
-    line_number = 0
 
-    for line in data_lines:
-        line_number += 1
-
-        if not line or line.startswith(comment_char):
-            continue
 
         data_field = data_struct
         (name, sep, value) = line.partition("=")
@@ -117,31 +111,3 @@ def structure_ads_data(data_lines: List[str]) -> Optional[dict]:
     return data_struct
 
 # ===========================================================================
-def save_ads_file(file_name: str, data_name: str, data_struct: dict):
-    """
-    Saves a data structure into an .ads file.
-
-    :param file_name: *str* The name of the file to save the data to.
-    :param data_name: *str* The name of the data being saved.
-    :param data_struct: *dict* The data structure to save.
-
-    :return: *int* 1 if successful.
-
-    :raises ValueError: If the file name is empty.
-    :raises IOError: If there is an error opening or writing to the file.
-
-    :examples:
-    >>> from fp_dataio.io.ads_io import save_ads_file
-    >>> file_name = "write_file.ads"
-    >>> save_ads_file(file_name=file_name, data_name="Basic", data_struct=data_struct)
-    """
-
-    if not file_name:
-        raise ValueError("ads_data.save_ads_file: Error - Empty file name")
-
-    try:
-        with open(file_name, "w", encoding="latin-1") as file_obj:
-            print_data_struct(data_name, data_struct, file_obj)
-        return 1
-    except IOError as e:
-        raise IOError(f"ads_data.save_ads_file: Error - Unable to open or write to file: {file_name}") from e

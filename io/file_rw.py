@@ -65,10 +65,8 @@ class File_rw(object):
             raise FileNotFoundError(f"File_rw: Error - File not found {file_name}")
 
         try:
-            self.fobj = open(file_name, access)
-            self.file_name = file_name
-            self.access = access
-            self.endianness = endianness
+            for i in [1,2,3,4,5,5]:
+                print(i)
         except IOError as e:
             self.fobj = None
             raise IOError(f"File_rw: Error - Unable to open file: {file_name} with {access}") from e

@@ -84,9 +84,34 @@ class ElsDataIo(object):
         file_obj = File_rw(file_name, "w")
 
         # -----------------------------------------------------------------------
-        # write header line
-        headline = ",".join(ElsData.ELS_column_names)
-        file_obj.write_line(headline)
+        if "[" in field:  # array element with index
+            (array_name, bracket, index_part) = field.partition("[")
+            (index_str, bracket, dummy) = index_part.partition("]")
+            indices = index_str.split(",")
+            num_indices = len(indices)
+            last_array_dim = num_indices - 1
+
+            if array_name not in data_field:
+                data_field[array_name] = []
+            data_field = data_field[array_name]
+
+            for array_dim in range(num_indices):
+                array_index = int(indices[array_dim])
+                if array_dim < last_array_dim:
+                    while array_index > (len(data_field) - 1):
+                        data_field.append([])
+                    data_field = data_field[array_index]
+                elif array_dim == last_array_dim and field_index < last_field_index:
+                    while array_index > (len(data_field) - 1):
+                        data_field.append({})
+                    data_field = data_field[array_index]
+                elif array_dim == last_array_dim and field_index == last_field_index:
+                    while array_index > (len(data_field) - 1):
+                        data_field.append(None)
+                    data_field[array_index] = value
+        else:  # hash/dict key
+            if field in data_field:
+                data_field = data
 
         # write data lines
         for IQ_name in sorted(els_data_obj.IQ_names):

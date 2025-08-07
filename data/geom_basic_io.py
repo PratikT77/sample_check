@@ -60,7 +60,7 @@ class GeomBasicIo(object):
             >>> writefile = r"xyz.ads"
             >>> GeomBasicIo.write_file(file_name=writefile, data=geom_obj.data)
         """
-        save_ads_file(file_name, "Basic.", data)
+        print("hello")
 
         logging.info(f"File {file_name} written successfully.")
 

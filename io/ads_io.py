@@ -13,20 +13,18 @@ comment_char = "#"
 ################################################################################
 def load_ads_file(file_name: str) -> Optional[dict]:
     """
-    Opens an .ads file, reads the data, and returns the data structure.
+    Opens an ads file, reads the data and returns the data structure
 
-    :param file_name: *str* The path of the file to read.
+    Args:
+        file_name (str): The Path of the file to read
 
-    :return: *dict, optional* The parsed data structure if successful, otherwise None.
+    Returns:
+        Optional[dict]: The parsed data structure if successful, otherwise None
 
-    :raises ValueError: If the file_path is empty.
-    :raises FileNotFoundError: If the specified file does not exist.
-    :raises IOError: If there is an error reading or opening the file.
-
-    :examples:
-    >>> from fp_dataio.io.ads_io import load_ads_file
-    >>> file_name = "J170L07D_Geom_Basic.ads"
-    >>> data_struct = load_ads_file(file_name=file_name)
+    Raises:
+        ValueError: if the file_path is empty.
+        FileNotFoundError: if the specific file does not exist
+        IOError: if there is an error reading or opening the file
     """
 
     # check file path
@@ -41,23 +39,26 @@ def load_ads_file(file_name: str) -> Optional[dict]:
 
         return data_struct
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"ads_data.load_ads_file: Error - file does not exist {file_name}") from e
+        raise FileNotFoundError(f"ads_data.load_ads_file: Error - file does not exist {file_name}")
     except IOError as e:
         raise IOError(f"ads_data.load_ads_file: Error - Unable to open or read file: {file_name}") from e
 
 # ===========================================================================
-def structure_ads_data(data_lines: List[str]) -> Optional[dict]:
+def structure_ads_data(data_lines) -> Optional[dict]:
     """
     Generates a nested data structure from a list of ADS-formatted data lines.
 
-    :param data_lines: *List[str]* A list of strings, where each string is a line from the ADS file.
+    This function parses each line, splitting keys and values, and builds a
+    complex structure of nested dictionaries and lists based on '.' and '[]'
+    notation in the keys.
 
-    :return: *dict, optional* The parsed data structure as a nested dictionary and list.
+    Args:
+        data_lines (List[str]): A list of strings, where each string is a
+                                line from the ADS file.
 
-    :examples:
-    >>> from fp_dataio.io.ads_io import structure_ads_data
-    >>> data_lines = []
-    >>> data_dict = structure_ads_data(data_lines=data_lines)
+    Returns:
+        Optional[dict]: The parsed data structure as a nested dictionary and
+                        list. Returns an empty dictionary if data_lines is empty.
     """
     data_struct = {}
 
@@ -66,18 +67,28 @@ def structure_ads_data(data_lines: List[str]) -> Optional[dict]:
     for line in data_lines:
         line_number += 1
 
-        if not line or line.startswith(comment_char):
+        # print ("Line (%s): %s" % (line_number,line))
+
+        if not line:
             continue
 
-        data_field = data_struct
+        if line.startswith(comment_char):
+            continue
+
+        data_field = (
+            data_struct  # pointer to the current field within the data structure
+        )
+
         (name, sep, value) = line.partition("=")
         value = value.rstrip()
         fields = name.split(".")
         num_fields = len(fields)
         last_field_index = num_fields - 1
 
-        for field_index in range(num_fields):
+        for field_index in range(0, num_fields):
             field = fields[field_index]
+
+            # print ("Field: %s" % field)
 
             if "[" in field:  # array element with index
                 (array_name, bracket, index_part) = field.partition("[")
@@ -88,52 +99,68 @@ def structure_ads_data(data_lines: List[str]) -> Optional[dict]:
 
                 if array_name not in data_field:
                     data_field[array_name] = []
+
                 data_field = data_field[array_name]
 
-                for array_dim in range(num_indices):
+                for array_dim in range(0, num_indices):
                     array_index = int(indices[array_dim])
+
                     if array_dim < last_array_dim:
                         while array_index > (len(data_field) - 1):
                             data_field.append([])
+
                         data_field = data_field[array_index]
+
                     elif array_dim == last_array_dim and field_index < last_field_index:
                         while array_index > (len(data_field) - 1):
                             data_field.append({})
+
                         data_field = data_field[array_index]
-                    elif array_dim == last_array_dim and field_index == last_field_index:
+
+                    elif (
+                            array_dim == last_array_dim and field_index == last_field_index
+                    ):
                         while array_index > (len(data_field) - 1):
                             data_field.append(None)
+
                         data_field[array_index] = value
+
             else:  # hash/dict key
                 if field in data_field:
                     data_field = data_field[field]
+
                 else:
                     if field_index < last_field_index:
                         data_field[field] = {}
+
                         data_field = data_field[field]
+
                     else:
+                        # print ("Value = %s" % (value))
+
                         data_field[field] = value
+
+    # -----------------------------------------------------------------------
+    # return the data structure
 
     return data_struct
 
 # ===========================================================================
-def save_ads_file(file_name: str, data_name: str, data_struct: dict):
+def save_ads_file(file_name, data_name, data_struct):
     """
-    Saves a data structure into an .ads file.
+    Saves a data structure into an ads file.
 
-    :param file_name: *str* The name of the file to save the data to.
-    :param data_name: *str* The name of the data being saved.
-    :param data_struct: *dict* The data structure to save.
+    Args:
+        file_name (str): The name of the file to save the data to.
+        data_name (str): The name of the data being saved.
+        data_struct (Any): The data structure to save
 
-    :return: *int* 1 if successful.
+    Returns:
+        Optional[int]: 1 if successful, None if an error occurs
 
-    :raises ValueError: If the file name is empty.
-    :raises IOError: If there is an error opening or writing to the file.
-
-    :examples:
-    >>> from fp_dataio.io.ads_io import save_ads_file
-    >>> file_name = "write_file.ads"
-    >>> save_ads_file(file_name=file_name, data_name="Basic", data_struct=data_struct)
+    Raises:
+        ValueError: if the file name is empty.
+        IOError: if there is an error opening or writing to the file
     """
 
     if not file_name:
@@ -142,6 +169,9 @@ def save_ads_file(file_name: str, data_name: str, data_struct: dict):
     try:
         with open(file_name, "w", encoding="latin-1") as file_obj:
             print_data_struct(data_name, data_struct, file_obj)
+
         return 1
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"ads_data.save_ads_file: Error - file does not exist {file_name}")
     except IOError as e:
         raise IOError(f"ads_data.save_ads_file: Error - Unable to open or write to file: {file_name}") from e
